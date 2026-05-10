@@ -2,6 +2,10 @@ const jwt = require('jsonwebtoken');
 
 function getJwtSecret() {
   if (!process.env.JWT_SECRET) {
+    if (!['development', 'test', undefined].includes(process.env.NODE_ENV)) {
+      throw new Error('JWT_SECRET üretim ortamında zorunludur.');
+    }
+
     console.warn('⚠️ JWT_SECRET tanımlı değil. Development fallback secret kullanılıyor.');
   }
 

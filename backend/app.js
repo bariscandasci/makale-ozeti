@@ -18,10 +18,14 @@ const defaultOriginPatterns = [/^http:\/\/localhost:\d+$/, /^http:\/\/127\.0\.0\
 app.use(
   cors({
     origin(origin, callback) {
-      const isDefaultLocalOrigin = defaultOriginPatterns.some((pattern) => pattern.test(origin || ''));
+      if (!origin) {
+        return callback(null, true);
+      }
+
+      const isDefaultLocalOrigin = defaultOriginPatterns.some((pattern) => pattern.test(origin));
       const isConfiguredOrigin = configuredOrigins.includes(origin);
 
-      if (!origin || isConfiguredOrigin || (!configuredOrigins.length && isDefaultLocalOrigin)) {
+      if (isConfiguredOrigin || (!configuredOrigins.length && isDefaultLocalOrigin)) {
         return callback(null, true);
       }
 

@@ -1,5 +1,6 @@
 const express = require('express');
 const bcrypt = require('bcryptjs');
+const rateLimit = require('express-rate-limit');
 const jwt = require('jsonwebtoken');
 
 const { authMiddleware, getJwtSecret } = require('../middleware/auth');
@@ -15,9 +16,47 @@ const {
 const summarizeText = require('../utils/summarizeText');
 
 const router = express.Router();
+const authRateLimiter = rateLimit({
+  windowMs: 15 * 60 * 1000,
+  max: 10,
+  standardHeaders: true,
+  legacyHeaders: false,
+  message: { error: 'Çok fazla kimlik doğrulama isteği. Lütfen daha sonra tekrar deneyin.' },
+});
+const protectedRouteLimiter = rateLimit({
+  windowMs: 60 * 1000,
+  max: 60,
+  standardHeaders: true,
+  legacyHeaders: false,
+  message: { error: 'Çok fazla istek gönderildi. Lütfen biraz sonra tekrar deneyin.' },
+});
 
 function validateEmail(email) {
-  return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email);
+  if (typeof email !== 'string') {
+    return false;
+  }
+
+  const normalizedEmail = email.trim().toLowerCase();
+  if (!normalizedEmail || normalizedEmail.length > 254 || normalizedEmail.includes(' ')) {
+    return false;
+  }
+
+  const parts = normalizedEmail.split('@');
+  if (parts.length !== 2) {
+    return false;
+  }
+
+  const [localPart, domainPart] = parts;
+  if (!localPart || !domainPart || domainPart.startsWith('.') || domainPart.endsWith('.')) {
+    return false;
+  }
+
+  const domainLabels = domainPart.split('.');
+  if (domainLabels.length < 2) {
+    return false;
+  }
+
+  return domainLabels.every((label) => /^[a-z0-9-]+$/i.test(label) && !label.startsWith('-') && !label.endsWith('-'));
 }
 
 function safeUserResponse(user) {
@@ -33,7 +72,7 @@ function generateToken(userId) {
   return jwt.sign({ userId }, getJwtSecret(), { expiresIn: '7d' });
 }
 
-router.post('/auth/register', async (req, res) => {
+router.post('/auth/register', authRateLimiter, async (req, res) => {
   try {
     const { email, password } = req.body;
 
@@ -67,7 +106,7 @@ router.post('/auth/register', async (req, res) => {
   }
 });
 
-router.post('/auth/login', async (req, res) => {
+router.post('/auth/login', authRateLimiter, async (req, res) => {
   try {
     const { email, password } = req.body;
 
@@ -98,7 +137,7 @@ router.post('/auth/login', async (req, res) => {
   }
 });
 
-router.post('/auth/profile', authMiddleware, async (req, res) => {
+router.post('/auth/profile', protectedRouteLimiter, authMiddleware, async (req, res) => {
   try {
     const user = await findUserById(req.user.userId);
 
@@ -118,7 +157,7 @@ router.post('/auth/profile', authMiddleware, async (req, res) => {
   }
 });
 
-router.post('/summarize', authMiddleware, async (req, res) => {
+router.post('/summarize', protectedRouteLimiter, authMiddleware, async (req, res) => {
   try {
     const { text, summaryRatio = 0.3 } = req.body;
 
@@ -155,7 +194,7 @@ router.post('/summarize', authMiddleware, async (req, res) => {
   }
 });
 
-router.get('/history', authMiddleware, async (req, res) => {
+router.get('/history', protectedRouteLimiter, authMiddleware, async (req, res) => {
   try {
     const history = await getSummariesByUserId(req.user.userId);
     return res.json({ history });
@@ -165,7 +204,7 @@ router.get('/history', authMiddleware, async (req, res) => {
   }
 });
 
-router.delete('/history/:id', authMiddleware, async (req, res) => {
+router.delete('/history/:id', protectedRouteLimiter, authMiddleware, async (req, res) => {
   try {
     const deleted = await deleteSummaryById(req.params.id, req.user.userId);
 

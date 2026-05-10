@@ -1,6 +1,7 @@
 const mongoose = require('mongoose');
 
 let databaseReady = false;
+const DB_SERVER_SELECTION_TIMEOUT_MS = Number(process.env.DB_SERVER_SELECTION_TIMEOUT_MS || 5000);
 
 async function connectDB() {
   const mongoUri = process.env.MONGODB_URI;
@@ -13,7 +14,7 @@ async function connectDB() {
 
   try {
     await mongoose.connect(mongoUri, {
-      serverSelectionTimeoutMS: 5000,
+      serverSelectionTimeoutMS: DB_SERVER_SELECTION_TIMEOUT_MS,
     });
     databaseReady = true;
     console.log('✅ MongoDB bağlantısı kuruldu');

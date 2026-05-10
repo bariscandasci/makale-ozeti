@@ -5,6 +5,8 @@ import api from '../services/api';
 import SummaryDisplay from './SummaryDisplay';
 import TextInput from './TextInput';
 
+const SUMMARY_PREVIEW_LENGTH = 72;
+
 function getApiError(error, fallback) {
   return error?.response?.data?.error || fallback;
 }
@@ -231,7 +233,7 @@ function Dashboard() {
                       type="button"
                       onClick={() => handleSelectHistory(item)}
                     >
-                      <strong>{item.summary.slice(0, 72)}...</strong>
+                      <strong>{item.summary.slice(0, SUMMARY_PREVIEW_LENGTH)}...</strong>
                       <span>
                         {new Date(item.createdAt).toLocaleString('tr-TR', {
                           dateStyle: 'medium',
