@@ -96,7 +96,7 @@ npm start
 
 - `POST /api/auth/register`
 - `POST /api/auth/login`
-- `POST /api/auth/profile` _(protected)_
+- `GET /api/auth/profile` _(protected)_
 
 ### Summary
 

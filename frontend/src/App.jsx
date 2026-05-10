@@ -7,9 +7,9 @@ import ProtectedRoute from './components/ProtectedRoute';
 import { useAuth } from './context/AuthContext';
 
 function LandingRedirect() {
-  const { isAuthenticated, isInitializing } = useAuth();
+  const { isAuthenticated, loading } = useAuth();
 
-  if (isInitializing) {
+  if (loading) {
     return (
       <div className="status-screen">
         <div className="status-card">

@@ -11,6 +11,17 @@ function getApiError(error, fallback) {
   return error?.response?.data?.error || fallback;
 }
 
+function normalizeHistoryItem(item) {
+  if (!item) {
+    return item;
+  }
+
+  return {
+    ...item,
+    id: item.id || item._id,
+  };
+}
+
 function Dashboard() {
   const navigate = useNavigate();
   const { logout, subscription, user } = useAuth();
@@ -42,7 +53,10 @@ function Dashboard() {
     try {
       setHistoryLoading(true);
       const response = await api.get('/history');
-      setHistory(response.data.history || []);
+      const historyItems = Array.isArray(response.data)
+        ? response.data
+        : response.data?.history || [];
+      setHistory(historyItems.map(normalizeHistoryItem));
     } catch (error) {
       const apiError = error?.response?.status;
       if (apiError === 401) {
@@ -74,9 +88,10 @@ function Dashboard() {
         text,
         summaryRatio,
       });
+      const createdItem = normalizeHistoryItem(response.data.historyItem || response.data);
 
-      setSummary(response.data.historyItem);
-      setHistory((current) => [response.data.historyItem, ...current]);
+      setSummary(createdItem);
+      setHistory((current) => [createdItem, ...current]);
       showMessage('success', 'Özet hazır. Geçmişine kaydedildi.');
     } catch (error) {
       showMessage('error', getApiError(error, 'Özet oluşturulamadı.'));
