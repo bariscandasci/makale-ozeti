@@ -16,8 +16,7 @@
     "dotenv": "^16.0.3",
     "natural": "^6.7.0",
     "axios": "^1.4.0",
-    "cheerio": "^1.0.0-rc.12",
-    "pdfparse": "^1.1.1"
+    "cheerio": "^1.0.0-rc.12"
   },
   "devDependencies": {
     "nodemon": "^2.0.22"
