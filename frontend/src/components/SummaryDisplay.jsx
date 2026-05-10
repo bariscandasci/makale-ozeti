@@ -47,18 +47,35 @@ function SummaryDisplay({ summary }) {
 
   return (
     <div className="summary-display-container">
-      <h2>✨ Özet Sonuçları</h2>
+      <div className="summary-topline">
+        <h2>Özet sonuçları</h2>
+        {summary.createdAt && (
+          <span className="summary-timestamp">
+            {new Date(summary.createdAt).toLocaleString('tr-TR', {
+              dateStyle: 'medium',
+              timeStyle: 'short',
+            })}
+          </span>
+        )}
+      </div>
 
       <div className="summary-box">
-        <h3>📄 Özet</h3>
+        <h3>Özet</h3>
         <p className="summary-text">{summary.summary}</p>
         <button className="btn-copy" onClick={handleCopy}>
-          {copied ? '✓ Kopyalandı!' : '📋 Kopyala'}
+          {copied ? 'Kopyalandı' : 'Kopyala'}
         </button>
       </div>
 
+      {summary.originalText && (
+        <div className="summary-box">
+          <h3>Orijinal metin</h3>
+          <p className="summary-text summary-original">{summary.originalText}</p>
+        </div>
+      )}
+
       <div className="keywords-box">
-        <h3>🔑 Anahtar Kelimeler</h3>
+        <h3>Anahtar kelimeler</h3>
         <div className="keywords-list">
           {summary.keywords && summary.keywords.map((keyword, index) => (
             <span key={index} className="keyword-tag">
@@ -69,7 +86,7 @@ function SummaryDisplay({ summary }) {
       </div>
 
       <div className="sentiment-box">
-        <h3>😊 Duygu Analizi</h3>
+        <h3>Duygu analizi</h3>
         <div className="sentiment-display">
           <span className="sentiment-emoji">{getSentimentEmoji()}</span>
           <span className="sentiment-text">{getSentimentText()}</span>
@@ -77,7 +94,7 @@ function SummaryDisplay({ summary }) {
       </div>
 
       <div className="stats-box">
-        <h3>📊 İstatistikler</h3>
+        <h3>İstatistikler</h3>
         <div className="stats-grid">
           <div className="stat-item">
             <span className="stat-label">Orijinal Cümle</span>
@@ -100,7 +117,7 @@ function SummaryDisplay({ summary }) {
       </div>
 
       <div className="share-box">
-        <h3>📤 Paylaş</h3>
+        <h3>Paylaş</h3>
         <div className="share-buttons">
           <button
             className="share-btn twitter"

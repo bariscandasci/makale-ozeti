@@ -1,150 +1,144 @@
-# 📰 Makale Özeti Yapan Tool
+# 📰 Makale Özeti SaaS
 
-Türkçe makaleleri hızlıca özetleyen, anahtar kelimeleri çıkaran ve duygu analizi yapan web uygulaması.
+Türkçe makaleleri özetleyen uygulamanın SaaS sürümü. Kullanıcı hesabı oluşturma, JWT tabanlı kimlik doğrulama, özet geçmişi, abonelik katmanı ve üretime hazır yapılandırma içerir.
 
-## ✨ Özellikler
+## ✨ Öne Çıkan Özellikler
 
-- 📝 **Metin Özeti**: Makaleleri istenilen orana göre özetle
-- 🔑 **Anahtar Kelimeler**: Makale hakkında en önemli kelimeleri bul
-- 😊 **Duygu Analizi**: Metnin duygusunu (pozitif/negatif/nötr) analiz et
-- 🌐 **URL Desteği**: Web sayfalarından direkt özet yap (Yakında)
-- 📄 **PDF Upload**: PDF dosyalarını yükleyip özetle (Yakında)
-- 📥 **Tek Tıkla Paylaş**: Özeti Twitter, LinkedIn'de paylaş
-- 🎨 **Modern Arayüz**: React ile güzel ve hızlı kullanıcı deneyimi
+- **MongoDB entegrasyonu**: Kullanıcı, abonelik ve özet geçmişi kayıtları
+- **JWT authentication**: Kayıt ol, giriş yap, korumalı profil ve geçmiş rotaları
+- **Özet geçmişi**: Önceki özetleri görüntüleme ve silme
+- **Profesyonel dashboard**: Profil kartı, özet oluşturucu ve geçmiş paneli
+- **Responsive UI**: Login/signup akışları, kullanıcı menüsü, bildirimler ve loading durumları
+- **Deployment-ready**: Ortam değişkenleri, CORS, Render/Railway uyumlu port ayarı
 
-## 🛠️ Teknik Stack
+## 🧱 Teknoloji Yığını
 
-- **Frontend**: React 18 + CSS3
-- **Backend**: Node.js + Express
-- **NLP**: Natural.js (Türkçe dil işleme)
-- **Styling**: Modern CSS with Animations
+- **Frontend**: React 18, React Router, Axios
+- **Backend**: Node.js, Express
+- **Veritabanı**: MongoDB + Mongoose
+- **Güvenlik**: bcryptjs, jsonwebtoken
+- **NLP**: Natural.js
 
-## 📋 Proje Yapısı
+## 📁 Proje Yapısı
 
-```
+```text
 makale-ozeti/
 ├── backend/
-│   ├── server.js              # Express sunucu
-│   ├── package.json           # Backend dependencies
-│   └── routes/
-│       └── api.js             # API endpoints
+│   ├── app.js
+│   ├── server.js
+│   ├── config/db.js
+│   ├── middleware/auth.js
+│   ├── models/
+│   ├── routes/api.js
+│   ├── services/dataStore.js
+│   └── utils/summarizeText.js
 ├── frontend/
-│   ├── src/
-│   │   ├── App.jsx            # Ana component
-│   │   ├── App.css            # Stil dosyası
-│   │   ├── components/        # React components
-│   │   │   ├── TextInput.jsx
-│   │   │   └── SummaryDisplay.jsx
-│   │   └── index.js
-│   ├── public/
-│   │   └── index.html
-│   └── package.json           # Frontend dependencies
+│   └── src/
+│       ├── components/
+│       ├── context/AuthContext.jsx
+│       ├── services/api.js
+│       ├── App.jsx
+│       └── App.test.jsx
 └── README.md
 ```
 
-## 🚀 Hızlı Başlama
+## 🚀 Lokal Kurulum
 
-### Gereksinimler
-- Node.js 16+
-- npm veya yarn
+### 1) Backend ortam değişkenleri
 
-### Kurulum
+`/backend/.env.example` dosyasını kopyalayın:
 
 ```bash
-# Repository'yi kopyala
-git clone https://github.com/bariscandasci/makale-ozeti.git
-cd makale-ozeti
+cd backend
+cp .env.example .env
+```
 
-# Backend kur ve başlat (Terminal 1)
+Örnek içerik:
+
+```env
+PORT=3001
+MONGODB_URI=mongodb://127.0.0.1:27017/makale-ozeti
+JWT_SECRET=replace-with-a-long-random-secret
+CORS_ORIGIN=http://localhost:3000,http://127.0.0.1:3000
+```
+
+### 2) Frontend ortam değişkenleri (opsiyonel)
+
+```bash
+cd ../frontend
+cp .env.example .env
+```
+
+Varsayılan geliştirme akışında `package.json` proxy ayarı ile backend `http://localhost:3001` adresine yönlenir.
+
+### 3) Bağımlılıklar ve çalışma
+
+```bash
+# Backend
 cd backend
 npm install
 npm start
 
-# Frontend kur ve başlat (Terminal 2 - yeni pencere)
-cd frontend
+# Frontend (ayrı terminal)
+cd ../frontend
 npm install
 npm start
 ```
 
-✅ Browser'da açılacak: **http://localhost:3000**
+- Frontend: `http://localhost:3000`
+- Backend: `http://localhost:3001`
 
-## 📖 API Endpoints
+> Not: `MONGODB_URI` verilmezse uygulama geliştirme amaçlı geçici in-memory store ile açılır. Üretimde mutlaka gerçek MongoDB bağlantısı sağlayın.
 
-### POST /api/summarize
-Metni özetle
+## 🔐 API Rotaları
 
-**Request:**
+### Auth
+
+- `POST /api/auth/register`
+- `POST /api/auth/login`
+- `POST /api/auth/profile` _(protected)_
+
+### Summary
+
+- `POST /api/summarize` _(protected, geçmişe kaydeder)_
+- `GET /api/history` _(protected)_
+- `DELETE /api/history/:id` _(protected)_
+
+### Örnek kayıt isteği
+
 ```json
 {
-  "text": "Makale metni...",
+  "email": "demo@example.com",
+  "password": "strongPass123"
+}
+```
+
+### Örnek özet isteği
+
+```json
+{
+  "text": "Uzun makale metni...",
   "summaryRatio": 0.3
 }
 ```
 
-**Response:**
-```json
-{
-  "summary": "Özet metni...",
-  "keywords": ["anahtar1", "anahtar2", ...],
-  "sentiment": "positive",
-  "originalLength": 10,
-  "summaryLength": 3
-}
+## 🧪 Komutlar
+
+### Frontend
+
+```bash
+npm test -- --watch=false
+npm run build
 ```
 
-## 📚 Geliştirme Aşamaları
+### Backend
 
-### ✅ Aşama 1: MVP (Tamamlandı)
-- [x] Proje yapısı
-- [x] Basit özet API'si
-- [x] Frontend bağlantısı
-- [x] Anahtar kelimeler
-- [x] Duygu analizi
+```bash
+npm start
+```
 
-### ⏳ Aşama 2: Genişleme
-- [ ] URL scraping
-- [ ] PDF upload
-- [ ] Geliştirilmiş duygu analizi
+## ☁️ Deployment Notları
 
-### ⏳ Aşama 3: İleri Özellikler
-- [ ] Kullanıcı hesapları
-- [ ] Özet geçmişi
-- [ ] Browser extension
-- [ ] Paylaşma seçenekleri
-
-## 🧪 Kullanım
-
-1. **Metin Gir**: Makale, haber veya herhangi bir Türkçe metni kopyala-yapıştır
-2. **Özet Oranını Ayarla**: Kaydırıcıyla %10 ile %100 arasında seç
-3. **Özet Yap**: Butonuna tıkla
-4. **Sonuçları Görüntüle**: 
-   - Oluşturulan özeti oku
-   - Anahtar kelimeleri gözlemle
-   - Duygu analizini kontrol et
-5. **Paylaş**: Twitter veya LinkedIn'de paylaş
-
-## 🤝 Katkıda Bulunma
-
-Bu proje eğitim amaçlı açık kaynak projedir. Katkılarınızı bekliyorum!
-
-1. Fork et
-2. Feature branch oluştur (`git checkout -b feature/AmazingFeature`)
-3. Commit et (`git commit -m 'Add some AmazingFeature'`)
-4. Push et (`git push origin feature/AmazingFeature`)
-5. Pull Request aç
-
-## 📝 Lisans
-
-MIT - Detaylar için [LICENSE](LICENSE) dosyasını incele
-
-## ✍️ Yazar
-
-[Barış Çandaş](https://github.com/bariscandasci)
-
-## 📞 İletişim
-
-Sorularınız, önerileriniz veya hata bildirimleri için [issues](https://github.com/bariscandasci/makale-ozeti/issues) kısmında bildirin.
-
----
-
-**Made with ❤️ for Turkish NLP enthusiasts**
+- Render/Railway için backend servisinde `PORT`, `MONGODB_URI`, `JWT_SECRET`, `CORS_ORIGIN` tanımlayın.
+- Frontend için gerekirse `REACT_APP_API_URL` ile API adresini belirtin.
+- Üretimde güçlü bir `JWT_SECRET` ve yönetilen MongoDB servisi kullanın.

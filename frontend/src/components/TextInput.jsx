@@ -12,7 +12,11 @@ function TextInput({
 }) {
   return (
     <div className="text-input-container">
-      <h2>📝 Metin Gir</h2>
+      <h2>Metin gir</h2>
+      <p className="section-description">
+        Makale, rapor veya toplantı notlarını yapıştır. Sistem özeti, anahtar kelimeleri ve duygu
+        analizini oluşturup hesabına kaydeder.
+      </p>
 
       <textarea
         className="text-input"
@@ -44,14 +48,14 @@ function TextInput({
             onClick={onSummarize}
             disabled={loading || !text.trim()}
           >
-            {loading ? '⏳ Özet Yapılıyor...' : '✨ Özet Yap'}
+            {loading ? 'Özet hazırlanıyor...' : 'Özet oluştur'}
           </button>
           <button
             className="btn btn-secondary"
             onClick={onReset}
             disabled={loading}
           >
-            🔄 Temizle
+            Temizle
           </button>
         </div>
       </div>
