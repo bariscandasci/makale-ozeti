@@ -5,6 +5,7 @@ export const AuthContext = createContext();
 
 export function AuthProvider({ children }) {
   const [user, setUser] = useState(null);
+  const [subscription, setSubscription] = useState(null);
   const [token, setToken] = useState(() => {
     try {
       return typeof window !== 'undefined' ? localStorage.getItem('token') : null;
@@ -20,7 +21,10 @@ export function AuthProvider({ children }) {
         .get('http://localhost:3001/api/auth/profile', {
           headers: { Authorization: `Bearer ${token}` },
         })
-        .then(res => setUser(res.data))
+        .then(res => {
+          setUser(res.data);
+          setSubscription(res.data.subscription || { tier: 'free', status: 'active' });
+        })
         .catch(() => {
           try {
             localStorage.removeItem('token');
@@ -39,11 +43,16 @@ export function AuthProvider({ children }) {
       password,
       name,
     });
-    setToken(res.data.token);
+    
+    const tokenData = res.data.token;
+    setToken(tokenData);
     setUser(res.data.user);
+    setSubscription(res.data.user?.subscription || { tier: 'free', status: 'active' });
+    
     try {
-      localStorage.setItem('token', res.data.token);
+      localStorage.setItem('token', tokenData);
     } catch {}
+    
     return res.data;
   };
 
@@ -52,17 +61,23 @@ export function AuthProvider({ children }) {
       email,
       password,
     });
-    setToken(res.data.token);
+    
+    const tokenData = res.data.token;
+    setToken(tokenData);
     setUser(res.data.user);
+    setSubscription(res.data.user?.subscription || { tier: 'free', status: 'active' });
+    
     try {
-      localStorage.setItem('token', res.data.token);
+      localStorage.setItem('token', tokenData);
     } catch {}
+    
     return res.data;
   };
 
   const logout = () => {
     setUser(null);
     setToken(null);
+    setSubscription(null);
     try {
       localStorage.removeItem('token');
     } catch {}
@@ -74,6 +89,7 @@ export function AuthProvider({ children }) {
         user,
         token,
         loading,
+        subscription,
         register,
         login,
         logout,

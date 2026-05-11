@@ -5,7 +5,8 @@ const api = axios.create({
 });
 
 api.interceptors.request.use((config) => {
-  const token = localStorage.getItem('makale-ozeti-token');
+  const token =
+    localStorage.getItem('token') || localStorage.getItem('makale-ozeti-token');
 
   if (token) {
     config.headers.Authorization = `Bearer ${token}`;

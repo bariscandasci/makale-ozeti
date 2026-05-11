@@ -1,12 +1,9 @@
 const express = require('express');
 const router = express.Router();
-const { CohereClientV2 } = require('cohere-ai');
 const auth = require('../middleware/auth');
 const Summary = require('../models/Summary');
-
-const cohere = new CohereClientV2({
-  token: process.env.COHERE_API_KEY,
-});
+const TrainingData = require('../models/TrainingData');
+const summarizeText = require('../utils/summarizeText');
 
 // POST /api/summarize - AI özeti (korumalı)
 router.post('/summarize', auth, async (req, res) => {
@@ -17,13 +14,7 @@ router.post('/summarize', auth, async (req, res) => {
       return res.status(400).json({ error: 'Metin boş olamaz' });
     }
 
-    // Cohere API çağrısı
-    const response = await cohere.summarize({
-      text: text,
-      length: summaryRatio > 0.5 ? 'long' : 'short',
-      format: 'bullets',
-      extractiveness: 'high',
-    });
+    const result = summarizeText(text, summaryRatio);
 
     // Anahtar kelimeleri çıkart
     const words = text.toLowerCase().split(/\s+/);
@@ -62,29 +53,30 @@ router.post('/summarize', auth, async (req, res) => {
     if (sentimentScore > 2) sentiment = 'positive';
     if (sentimentScore < -2) sentiment = 'negative';
 
-    const originalLength = text.split(/[.!?]+/).length - 1;
-    const summaryLength = response.summary.split(/[.!?]+/).length - 1;
-
     // Veritabanına kaydet
     const summary = new Summary({
       userId: req.userId,
       originalText: text,
-      summary: response.summary,
-      keywords,
-      sentiment,
-      originalLength,
-      summaryLength,
+      summary: result.summary,
+      keywords: result.keywords,
+      sentiment: result.sentiment,
+      originalLength: result.originalLength,
+      summaryLength: result.summaryLength,
     });
 
     await summary.save();
 
     res.json({
-      _id: summary._id,
-      summary: response.summary,
-      keywords,
-      sentiment,
-      originalLength,
-      summaryLength,
+      historyItem: {
+        id: summary._id,
+        originalText: summary.originalText,
+        summary: summary.summary,
+        keywords: summary.keywords,
+        sentiment: summary.sentiment,
+        originalLength: summary.originalLength,
+        summaryLength: summary.summaryLength,
+        createdAt: summary.createdAt,
+      },
     });
 
   } catch (error) {
@@ -123,5 +115,95 @@ router.delete('/history/:id', auth, async (req, res) => {
     res.status(500).json({ error: 'Silme sırasında hata oluştu' });
   }
 });
+// POST /api/training/add - Eğitim verisi ekle (korumalı)
+router.post('/training/add', auth, async (req, res) => {
+  try {
+    const { text, summary } = req.body;
+
+    if (!text || !summary) {
+      return res.status(400).json({ error: 'Metin ve özet alanları gerekli' });
+    }
+
+    if (text.trim().length < 10) {
+      return res.status(400).json({ error: 'Metin en az 10 karakter olmalı' });
+    }
+
+    if (summary.trim().length < 5) {
+      return res.status(400).json({ error: 'Özet en az 5 karakter olmalı' });
+    }
+
+    const trainingData = new TrainingData({
+      userId: req.userId,
+      text: text.trim(),
+      summary: summary.trim(),
+    });
+
+    await trainingData.save();
+
+    res.status(201).json({
+      message: 'Eğitim verisi başarıyla kaydedildi',
+      data: {
+        id: trainingData._id,
+        text: trainingData.text,
+        summary: trainingData.summary,
+        createdAt: trainingData.createdAt,
+      },
+    });
+  } catch (error) {
+    console.error('Training data error:', error);
+    res.status(500).json({ error: 'Eğitim verisi kaydedilemedi' });
+  }
+});
+
+// GET /api/training - Eğitim geçmişi (korumalı)
+router.get('/training', auth, async (req, res) => {
+  try {
+    const trainingData = await TrainingData.find({ userId: req.userId })
+      .sort({ createdAt: -1 })
+      .limit(100);
+
+    res.json({
+      count: trainingData.length,
+      data: trainingData,
+    });
+  } catch (error) {
+    res.status(500).json({ error: 'Eğitim geçmişi alınamadı' });
+  }
+});
+
+// GET /api/training/list - Eğitim geçmişi (korumalı, alias)
+router.get('/training/list', auth, async (req, res) => {
+  try {
+    const trainingData = await TrainingData.find({ userId: req.userId })
+      .sort({ createdAt: -1 })
+      .limit(100);
+
+    res.json({
+      count: trainingData.length,
+      data: trainingData,
+    });
+  } catch (error) {
+    res.status(500).json({ error: 'Eğitim geçmişi alınamadı' });
+  }
+});
+
+// DELETE /api/training/:id - Eğitim verisi sil (korumalı)
+router.delete('/training/:id', auth, async (req, res) => {
+  try {
+    const trainingData = await TrainingData.findOneAndDelete({
+      _id: req.params.id,
+      userId: req.userId,
+    });
+
+    if (!trainingData) {
+      return res.status(404).json({ error: 'Eğitim verisi bulunamadı' });
+    }
+
+    res.json({ message: 'Eğitim verisi silindi' });
+  } catch (error) {
+    res.status(500).json({ error: 'Silme sırasında hata oluştu' });
+  }
+});
+
 
 module.exports = router;

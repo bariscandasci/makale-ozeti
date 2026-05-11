@@ -142,3 +142,136 @@ npm start
 - Render/Railway için backend servisinde `PORT`, `MONGODB_URI`, `JWT_SECRET`, `CORS_ORIGIN` tanımlayın.
 - Frontend için gerekirse `REACT_APP_API_URL` ile API adresini belirtin.
 - Üretimde güçlü bir `JWT_SECRET` ve yönetilen MongoDB servisi kullanın.
+
+## 🤖 Model Fine-tuning
+
+Eğitim verileri ile BART modeli fine-tune edebilirsiniz:
+
+### 1) Python Bağımlılıkları Kur
+
+```bash
+cd backend
+pip install -r requirements-training.txt
+```
+
+### 2) Eğitim Verileri Hazırla
+
+Dashboard'daki "Eğitim Verisi Ekle" formundan metin-özet çiftleri girin.
+
+### 3) Model Eğitim Komutunu Çalıştır
+
+```bash
+python train_model.py
+```
+
+**Parametreler:**
+- `MONGODB_URI`: MongoDB bağlantı adresi
+- `Epochs`: 3
+- `Batch Size`: 2
+- `Model`: facebook/bart-large-cnn
+- `Çıktı`: `./trained_model/` dizini
+
+**Çıktı:**
+```
+========================================
+BART Model Fine-tuning Pipeline
+========================================
+✅ GPU available: NVIDIA GPU name (or CPU)
+✅ MongoDB connection successful
+✅ Loaded X training samples
+Training for 3 epochs with batch size 2...
+✅ Training completed
+✅ Model saved to ./trained_model
+```
+
+### 4) Eğitim Verisi API Endpoints
+
+- `POST /api/training/add` - Eğitim verisi ekle (JWT required)
+- `GET /api/training/list` - Tüm eğitim verilerini getir (JWT required)
+- `DELETE /api/training/:id` - Eğitim verisini sil (JWT required)
+
+**Örnek POST isteği:**
+```json
+{
+  "text": "Makale veya rapor metni...",
+  "summary": "Özeti..."
+}
+```
+
+## 🚀 Inference Server
+
+Eğitim yapılmış model ile tahmin yapmak için inference server'ı başlatabilirsiniz:
+
+### 1) Model Eğit
+
+```bash
+python train_model.py
+```
+
+### 2) Inference Server'ı Başlat
+
+```bash
+python inference_server.py
+```
+
+Server port 5000'de çalışır.
+
+### 3) API Endpoints
+
+**GET /health**
+```bash
+curl http://localhost:5000/health
+```
+
+**GET /api/model-status**
+```bash
+curl http://localhost:5000/api/model-status
+```
+
+Response:
+```json
+{
+  "status": "ready",
+  "model": "facebook/bart-large-cnn",
+  "device": "cuda",
+  "max_input_length": 512,
+  "max_output_length": 128
+}
+```
+
+**POST /api/summarize**
+```bash
+curl -X POST http://localhost:5000/api/summarize \
+  -H "Content-Type: application/json" \
+  -d '{"text": "Makale metni..."}'
+```
+
+Response:
+```json
+{
+  "status": "success",
+  "summary": "Özeti...",
+  "confidence": 0.92,
+  "input_length": 250,
+  "output_length": 45
+}
+```
+
+**POST /api/retrain** (MongoDB'den veri ile yeniden eğit)
+```bash
+curl -X POST http://localhost:5000/api/retrain
+```
+
+### 4) Environment Variables
+
+`.env` dosyasına ekleyin:
+```env
+MONGODB_URI=mongodb://127.0.0.1:27017/makale-ozeti
+INFERENCE_PORT=5000
+```
+
+### 5) CORS Ayarı
+
+- Inference server: `http://localhost:3000` ve `http://127.0.0.1:3000` için CORS açık
+- Express.js Backend: Kendi CORS ayarlarını kullanır
+

@@ -1,65 +1,49 @@
 const express = require('express');
 const cors = require('cors');
 const dotenv = require('dotenv');
-
-const apiRouter = require('./routes/api');
+const mongoose = require('mongoose');
 
 dotenv.config();
 
 const app = express();
+const PORT = process.env.PORT || 3001;
 
-const configuredOrigins = (process.env.CORS_ORIGIN || '')
-  .split(',')
-  .map((origin) => origin.trim())
-  .filter(Boolean);
-
-const defaultOriginPatterns = [/^http:\/\/localhost:\d+$/, /^http:\/\/127\.0\.0\.1:\d+$/];
-
-app.use(
-  cors({
-    origin(origin, callback) {
-      if (!origin) {
-        return callback(null, true);
-      }
-
-      const isDefaultLocalOrigin = defaultOriginPatterns.some((pattern) => pattern.test(origin));
-      const isConfiguredOrigin = configuredOrigins.includes(origin);
-
-      if (isConfiguredOrigin || (!configuredOrigins.length && isDefaultLocalOrigin)) {
-        return callback(null, true);
-      }
-
-      console.warn(`Blocked CORS origin: ${origin}`);
-      return callback(new Error('CORS isteğine izin verilmiyor'));
-    },
-    credentials: true,
-  })
-);
-
+// Middleware
+app.use(cors({
+  origin: process.env.FRONTEND_URL || 'http://localhost:3000',
+  credentials: true,
+}));
 app.use(express.json({ limit: '50mb' }));
-app.use(express.urlencoded({ extended: true, limit: '50mb' }));
+app.use(express.urlencoded({ limit: '50mb', extended: true }));
 
-app.use('/api', apiRouter);
+// MongoDB Bağlantısı
+if (process.env.MONGODB_URI) {
+  mongoose.connect(process.env.MONGODB_URI, {
+    serverSelectionTimeoutMS: 5000,
+    socketTimeoutMS: 45000,
+    retryWrites: true,
+    w: 'majority'
+  })
+    .then(() => console.log('✅ MongoDB bağlantısı başarılı'))
+    .catch(err => console.error('❌ MongoDB bağlantı hatası:', err));
+}
 
+// Routes
+const authRouter = require('./routes/auth');
+const summarizeRouter = require('./routes/api');
+
+app.use('/api/auth', authRouter);
+app.use('/api', summarizeRouter);
+
+// Health check
 app.get('/health', (req, res) => {
-  const db = require('./config/db');
-
-  res.json({
-    status: 'OK',
-    message: 'Server is running',
-    database: db.isDatabaseReady() ? 'connected' : 'development-memory',
-  });
+  res.json({ status: 'OK', message: 'Server is running' });
 });
 
+// Error handler
 app.use((err, req, res, next) => {
-  if (res.headersSent) {
-    return next(err);
-  }
-
   console.error(err.stack);
-  return res.status(500).json({
-    error: err.message || 'Internal server error',
-  });
+  res.status(500).json({ error: 'Internal server error' });
 });
 
 module.exports = app;

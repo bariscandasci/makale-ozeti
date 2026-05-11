@@ -1,0 +1,72 @@
+.training-list {
+  display: grid;
+  gap: 12px;
+}
+
+.training-item {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: 16px;
+  padding: 16px;
+  background: rgba(59, 130, 246, 0.08);
+  border: 1px solid rgba(148, 163, 184, 0.18);
+  border-radius: 14px;
+  transition: background 0.2s ease, border-color 0.2s ease;
+}
+
+.training-item:hover {
+  background: rgba(99, 102, 241, 0.12);
+  border-color: rgba(148, 163, 184, 0.28);
+}
+
+.training-content {
+  flex: 1;
+  display: grid;
+  gap: 8px;
+}
+
+.training-text,
+.training-summary {
+  display: grid;
+  gap: 4px;
+}
+
+.training-text strong,
+.training-summary strong {
+  font-size: 0.8rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  color: #a5b4fc;
+}
+
+.training-text p,
+.training-summary p {
+  font-size: 0.9rem;
+  color: #cbd5f5;
+  line-height: 1.5;
+  word-break: break-word;
+}
+
+.training-date {
+  font-size: 0.8rem;
+  color: #94a3b8;
+  margin-top: 4px;
+}
+
+.training-item .danger-button {
+  align-self: flex-start;
+  white-space: nowrap;
+  flex-shrink: 0;
+}
+
+@media (max-width: 640px) {
+  .training-item {
+    flex-direction: column;
+  }
+
+  .training-item .danger-button {
+    align-self: stretch;
+  }
+}
